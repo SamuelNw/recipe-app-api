@@ -123,4 +123,42 @@ class PublicUserApiTests(TestCase):
 
 class PrivateUserApiTests(TestCase):
     """Tests that require authentication."""
-    pass
+
+    def setUp(self):
+        self.user = {
+            "email": "test@example.com",
+            "password": "testpass123",
+            "name": "Test Name"
+        }
+        self.client = APIClient()
+        self.client.force_authenticate(user=self.user)
+
+    def test_authorized_retrieval_success(self):
+        """Test that retrieving data of authorized users works."""
+        res = self.client.get(ME_URL)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, {
+            "name": self.user.name,
+            "email": self.user.email
+        })
+
+    def test_post_unsupported(self):
+        """Test that this endpoint does not support post method."""
+        res = self.client.post(ME_URL, {})
+
+        self.assertEqual(res.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_update_profile_successful(self):
+        """Test that updating user data works."""
+        payload = {
+            "name": "Updated Name",
+            "password": "newpassword",
+        }
+
+        res = self.client.patch(ME_URL, payload)
+        self.user.refresh_from_db()
+
+        self.assertEqual(self.user.name, payload["name"])
+        self.assertTrue(self.user.check_password(payload["password"]))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
