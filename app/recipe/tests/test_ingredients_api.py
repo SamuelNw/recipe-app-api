@@ -17,6 +17,11 @@ from recipe.serializers import IngredientSerializer
 INGREDIENTS_URL = reverse("recipe:ingredient-list")
 
 
+def detail_url(ingredient_id):
+    """Handle creation of dynamic urls."""
+    return reverse("recipe:ingredient-detail", args=[ingredient_id])
+
+
 def create_user(email="user@example.com", password="testpass123"):
     """Helper function to create a new user."""
     return get_user_model().objects.create_user(
@@ -74,3 +79,16 @@ class PrivateIngredientAPITests(TestCase):
         self.assertEqual(len(ingredients), 1)
         self.assertEqual(ingredients[0].name, ingredient.name)
         self.assertEqual(ingredients[0].user, self.user)
+
+    def test_upadating_ingredient(self):
+        """Test that updating ingredient works successfully."""
+        ingredient = Ingredient.objects.create(
+            user=self.user, name="Cilantro")
+
+        payload = {"name": "Coriander"}
+        url = detail_url(ingredient.id)
+        res = self.client.patch(url, payload)
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        ingredient.refresh_from_db()
+        self.assertEqual(ingredient.name, payload["name"])
