@@ -357,7 +357,7 @@ class PrivateRecipeAPITests(TestCase):
         recipe = create_recipe(user=self.user)
 
         payload = {
-            "name": "Limes",
+            "ingredients": [{"name": "Limes"}]
         }
 
         url = detail_url(recipe.id)
