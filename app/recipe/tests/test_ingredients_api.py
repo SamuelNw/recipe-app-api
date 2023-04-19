@@ -20,7 +20,7 @@ INGREDIENTS_URL = reverse("recipe:ingredient-list")
 def create_user(email="user@example.com", password="testpass123"):
     """Helper function to create a new user."""
     return get_user_model().objects.create_user(
-        email=email, passowrd=password)
+        email=email, password=password)
 
 
 class PublicIngredientAPITests(TestCase):
@@ -70,7 +70,7 @@ class PrivateIngredientAPITests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
 
-        ingredients = Ingredient.objects.all().order_by("-name")
+        ingredients = Ingredient.objects.filter(user=self.user)
         self.assertEqual(len(ingredients), 1)
-        self.assertEqual(ingredients[0]["name"], ingredient.name)
-        self.assertEqual(ingredients[0]["user"], self.user)
+        self.assertEqual(ingredients[0].name, ingredient.name)
+        self.assertEqual(ingredients[0].user, self.user)
