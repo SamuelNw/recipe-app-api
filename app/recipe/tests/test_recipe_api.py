@@ -365,3 +365,22 @@ class PrivateRecipeAPITests(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         ingredient = Ingredient.objects.get(user=self.user, name="Limes")
         self.assertIn(ingredient, recipe.ingredients.all())
+
+    def test_assign_ingredient_when_creating_recipe(self):
+        """Test assigning existing ingredient when creating a recipe."""
+        ingredient1 = Ingredient.objects.create(
+            user=self.user, name="Pepper")
+        recipe = create_recipe(user=self.user)
+        recipe.ingredients.add(ingredient1)
+
+        ingredient2 = Ingredient.objects.create(
+            user=self.user, name="Chilli")
+        payload = {
+            "ingredients": [{"name": "Chilli"}]
+        }
+        url = detail_url(recipe.id)
+        res = self.client.patch(url, payload, format="json")
+
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn(ingredient2, recipe.ingredients.all())
+        self.assertNotIn(ingredient1, recipe.ingredients.all())
