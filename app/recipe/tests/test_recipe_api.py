@@ -2,7 +2,12 @@
 Tests for the recipe API endpoints.
 """
 
+
+import os
+import tempfile
+
 from decimal import Decimal
+from PIL import Image
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
@@ -29,6 +34,11 @@ RECIPES_URL = reverse("recipe:recipe-list")
 def detail_url(recipe_id):
     """Generate a url for the specific recipe."""
     return reverse("recipe:recipe-detail", args=[recipe_id])
+
+
+def image_upload_url(recipe_id):
+    """Create the image upload url."""
+    return reverse("recipe:image-upload-url", args=[recipe_id])
 
 
 def create_recipe(user, **params):
@@ -401,3 +411,34 @@ class PrivateRecipeAPITests(TestCase):
 
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(recipe.ingredients.count(), 0)
+
+
+class ImageUploadTests(TestCase):
+    """Tests for the image upload endpoint."""
+
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "user@example.com",
+            "testpass123"
+        )
+        self.client.force_authenticate(self.user)
+        self.recipe = create_recipe(self.user)
+
+    def tearDown(self):
+        self.recipe.image.delete()
+
+    def test_upload_image_to_recipe(self):
+        """Test uploading an image to a recipe."""
+        url = image_upload_url(self.recipe.id)
+        with tempfile.NamedTemporaryFile(suffix=".jpg") as image_file:
+            img = Image.new("RGB", (10, 10))
+            img.save(image_file, format="JPEG")
+            image_file.seek(0)
+            payload = {"image": image_file}
+            res = self.client.post(url, payload, format="multipart")
+
+        self.recipe.refresh_from_db()
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertIn("image", res.data)
+        self.assertTrue(os.path.exists(self.recipe.image.path))
