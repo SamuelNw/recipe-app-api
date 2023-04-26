@@ -122,7 +122,8 @@ class BaseRecipeAttrViewSet(
         if assigned_only:
             queryset = queryset.filter(recipe__isnull=False)
 
-        return queryset.filter(user=self.request.user).order_by("-name").distinct()
+        return queryset.filter(
+            user=self.request.user).order_by("-name").distinct()
 
 
 class TagViewSet(BaseRecipeAttrViewSet):
